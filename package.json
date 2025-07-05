@@ -1,0 +1,32 @@
+{
+  "name": "ical-share",
+  "module": "src/main.ts",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "version": "1.0.0",
+  "description": "A simple script to export a calendar to ICS and upload it using Uploadthing.",
+  "author": {
+    "name": "Patrick Rodrigues",
+    "email": "git@rodpa.dev",
+    "url": "https://rodpa.dev"
+  },
+  "scripts": {
+    "start": "bun run src/main.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "dotenv": "^17.0.1",
+    "uploadthing": "^7.7.3"
+  },
+  "engines": {
+    "bun": ">=1.2.17"
+  },
+  "packageManager": "bun@1.2.17"
+}
