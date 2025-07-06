@@ -39,6 +39,8 @@ CALENDAR_PERMA_KEY=your_custom_permanent_key_for_the_file
 
 ## Usage
 
+### Running Manually
+
 Run the application:
 
 ```
@@ -50,6 +52,52 @@ The script will:
 2. Generate an ICS file (`shared.ics`)
 3. Upload the file to UploadThing
 4. Output a shareable URL that can be used to import the calendar
+
+### Running in the Background
+
+To run the application in the background and have it start automatically on system boot:
+
+1. Create a launch agent plist file:
+
+```
+mkdir -p ~/Library/LaunchAgents
+```
+
+2. Create a file named `dev.rodpa.ical-share.plist` in the LaunchAgents directory with the following content (adjust paths as needed):
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>dev.rodpa.ical-share</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/path/to/bun</string>
+        <string>start</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/path/to/ical-share</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StartInterval</key>
+    <integer>3600</integer>
+    <key>StandardOutPath</key>
+    <string>/tmp/ical-share.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/ical-share.err</string>
+</dict>
+</plist>
+```
+
+3. Load the launch agent:
+
+```
+launchctl load ~/Library/LaunchAgents/dev.rodpa.ical-share.plist
+```
+
+This will run the script once per hour (3600 seconds) and also at system startup.
 
 ## How It Works
 

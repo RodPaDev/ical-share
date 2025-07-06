@@ -18,8 +18,8 @@ const FILE_PATH = "./shared.ics";
 
 async function main() {
   try {
-    const path = exportCalendarToICS(FILE_PATH);
-    await uploadICS(path, CALENDAR_PERMA_KEY!);
+    // const path = exportCalendarToICS(FILE_PATH);
+    await uploadICS( "./shared.ics", CALENDAR_PERMA_KEY!);
     console.log("📎 File URL:", `https://${APP_ID}.ufs.sh/f/${CALENDAR_PERMA_KEY}`)
   } catch (err) {
     console.error("❌ Failed:", err);
