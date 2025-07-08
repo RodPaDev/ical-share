@@ -1,111 +1,129 @@
-# Calendar Sharing Tool
+# iCal Share
 
-A simple utility to export macOS Calendar events to an ICS file and upload it to a shareable URL using UploadThing.
+A simple tool to export your macOS Calendar events to an ICS file and upload it to Cloudflare R2 storage, making it publicly accessible via a URL.
 
 ## Features
 
-- Exports events from the macOS Calendar app for the current week
-- Converts calendar events to standard ICS format
-- Uploads the ICS file to UploadThing with a permanent URL
-- Provides a shareable link that can be imported into other calendar applications
+- Exports events from your macOS Calendar app
+- Generates a standard ICS file compatible with most calendar applications
+- Uploads the ICS file to Cloudflare R2 storage
+- Provides a public URL for sharing your calendar
+- Can run on a schedule to keep your shared calendar up-to-date
 
 ## Prerequisites
 
-- macOS (required for Calendar app access)
-- [Bun](https://bun.sh/) JavaScript runtime
-- UploadThing account and API credentials
+- macOS (requires access to the macOS Calendar app)
+- [Bun](https://bun.sh/) runtime (v1.2.17 or later)
+- Xcode Command Line Tools (for Swift compilation)
+- Cloudflare R2 storage account
 
-## Installation
+## Setup
 
-1. Clone this repository
-2. Install dependencies:
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/yourusername/ical-share.git
+   cd ical-share
    ```
+
+2. Install dependencies:
+   ```bash
    bun install
    ```
-3. Copy the example environment file and fill in your credentials:
+
+3. Build the Swift calendar export tool:
+   ```bash
+   ./build.sh
    ```
+
+4. Create a `.env` file based on the example:
+   ```bash
    cp .env.example .env
    ```
 
-## Environment Variables
+5. Configure your `.env` file with the following values:
+   ```
+   # Cloudflare R2 Configuration
+   R2_ACCOUNT_ID=your-r2-account-id
+   R2_ACCESS_KEY_ID=your-r2-access-key
+   R2_SECRET_ACCESS_KEY=your-r2-secret-key
+   R2_BUCKET_NAME=your-bucket-name
+   R2_PUBLIC_URL=https://your-public-url.example.com
+   
+   # Calendar Configuration
+   CALENDAR_PERMA_KEY=your-custom-calendar-identifier
+   ```
 
-Create a `.env` file with the following variables:
+   The `CALENDAR_PERMA_KEY` is a custom identifier that will be used in the URL for your calendar (e.g., `your-custom-calendar-identifier.ics`).
 
-```
-UPLOADTHING_TOKEN=your_uploadthing_api_token
-UPLOADTHING_APP_ID=your_uploadthing_app_id
-CALENDAR_PERMA_KEY=your_custom_permanent_key_for_the_file
-```
+6. Grant calendar access permissions when prompted during the first run.
 
 ## Usage
 
-### Running Manually
+### One-time Export
 
-Run the application:
+To export your calendar once and upload it:
 
-```
+```bash
 bun start
 ```
 
-The script will:
+This will:
 1. Export events from your macOS Calendar for the current week
 2. Generate an ICS file (`shared.ics`)
-3. Upload the file to UploadThing
-4. Output a shareable URL that can be used to import the calendar
+3. Upload the file to your R2 bucket
+4. Display the public URL for sharing
 
-### Running in the Background
+### Scheduled Export
 
-To run the application in the background and have it start automatically on system boot:
+To run the export on a schedule, use the `run.sh` script with an interval parameter:
 
-1. Create a launch agent plist file:
-
-```
-mkdir -p ~/Library/LaunchAgents
+```bash
+./run.sh 1h  # Run every hour
 ```
 
-2. Create a file named `dev.rodpa.ical-share.plist` in the LaunchAgents directory with the following content (adjust paths as needed):
+Supported interval formats:
+- `s` for seconds (e.g., `30s`)
+- `m` for minutes (e.g., `15m`)
+- `1h` for hours (e.g., `1h`)
+- `1d` for days (e.g., `1d`)
 
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>dev.rodpa.ical-share</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/path/to/bun</string>
-        <string>start</string>
-    </array>
-    <key>WorkingDirectory</key>
-    <string>/path/to/ical-share</string>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>StartInterval</key>
-    <integer>3600</integer>
-    <key>StandardOutPath</key>
-    <string>/tmp/ical-share.log</string>
-    <key>StandardErrorPath</key>
-    <string>/tmp/ical-share.err</string>
-</dict>
-</plist>
+The script will run immediately and then at the specified interval until stopped.
+
+## Testing
+
+To test the calendar export tool without uploading:
+
+```bash
+./build.sh test
 ```
 
-3. Load the launch agent:
+Or using the TypeScript interface:
 
+```bash
+bun run src/calendar-export.ts --test
 ```
-launchctl load ~/Library/LaunchAgents/dev.rodpa.ical-share.plist
-```
 
-This will run the script once per hour (3600 seconds) and also at system startup.
+## Troubleshooting
 
-## How It Works
+### Calendar Access
 
-1. The `dump_events.applescript` script queries the macOS Calendar app for events
-2. The `calendar-export.ts` module processes these events and creates an ICS file
-3. The `upload.ts` module uploads the ICS file to UploadThing with a permanent ID
-4. The main script coordinates these operations and outputs the shareable URL
+If you encounter permission issues:
+1. Go to System Preferences > Security & Privacy > Privacy > Calendars
+2. Ensure that Terminal (or your IDE) has permission to access your calendars
+
+### Build Issues
+
+If the Swift build fails:
+1. Make sure Xcode Command Line Tools are installed: `xcode-select --install`
+2. Try rebuilding with: `./build.sh rebuild`
+
+### Upload Issues
+
+If uploads fail:
+1. Verify your R2 credentials in the `.env` file
+2. Check that your bucket exists and has the correct permissions
+3. Ensure your R2 public URL is correctly configured
 
 ## License
 
-This project is privately maintained.
+MIT

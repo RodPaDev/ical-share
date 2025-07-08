@@ -1,42 +1,58 @@
-import { UTApi, UTFile } from "uploadthing/server";
-import { readFileSync, writeFileSync } from "fs";
-import path from "path";
+import { readFileSync } from "fs";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import dotenv from "dotenv";
 dotenv.config();
 
-const utapi = new UTApi();
+const ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
+const ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
+const SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
+const BUCKET_NAME = process.env.R2_BUCKET_NAME;
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+// Initialize R2 client with AWS SDK v3
+const s3Client = new S3Client({
+  endpoint: `https://${ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: ACCESS_KEY_ID!,
+    secretAccessKey: SECRET_ACCESS_KEY!,
+  },
+  region: 'auto',
+  // Force path-style URLs for R2 compatibility
+  forcePathStyle: false,
+});
 
 export async function uploadICS(
   filePath: string,
   customId: string
 ): Promise<string> {
   const data = readFileSync(filePath);
-  const fileName = path.basename(filePath);
+  const key = `${customId}.ics`;
 
-  const file = new UTFile([data], fileName, {
-    type: "text/calendar",
-    customId,
-  });
+  try {
+    // Create the put object command
+    const command = new PutObjectCommand({
+      Bucket: BUCKET_NAME!,
+      Key: key,
+      Body: data,
+      ContentType: 'text/calendar',
+      // Note: ACL is handled differently in SDK v3 and may not be supported by R2
+      // You might need to set bucket policies instead
+      Metadata: {
+        'uploaded-by': 'bun-calendar-export',
+        'upload-timestamp': new Date().toISOString(),
+      },
+    });
 
- const res = await utapi.deleteFiles(customId, { keyType: "customId" });
+    // Upload the file to R2
+    const response = await s3Client.send(command);
+    
+    console.log(`✅ File uploaded successfully: ${key}`);
+    console.log(`📋 ETag: ${response.ETag}`);
 
- if (!res.success){
-    console.error("❌ Failed to delete previous file:", res.deletedCount);
-    throw new Error("Failed to delete previous file");
- }
-
-  const uploadRes = await utapi.uploadFiles([file], {
-      
-  })
-
-  if(uploadRes[0].error){
-  console.error("❌ Upload failed:");
-    console.log(uploadRes[0].error);
+    // Return the public URL
+    const publicUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
+    return publicUrl;
+  } catch (error) {
+    console.error("❌ Upload failed:", error);
+    throw new Error(`Failed to upload file: ${error}`);
   }
-
- return new Promise((resolve, reject) => "test")
 }
