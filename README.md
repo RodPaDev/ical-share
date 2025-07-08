@@ -1,128 +1,96 @@
 # iCal Share
 
-A simple tool to export your macOS Calendar events to an ICS file and upload it to Cloudflare R2 storage, making it publicly accessible via a URL.
+A simple utility to export macOS Calendar events to an ICS file and upload it to Cloudflare R2 storage, making it publicly accessible via a custom URL.
 
 ## Features
 
-- Exports events from your macOS Calendar app
-- Generates a standard ICS file compatible with most calendar applications
+- Exports calendar events from macOS Calendar app using EventKit
+- Converts events to standard ICS format
 - Uploads the ICS file to Cloudflare R2 storage
 - Provides a public URL for sharing your calendar
-- Can run on a schedule to keep your shared calendar up-to-date
+- Supports scheduled automatic updates via macOS LaunchAgent
 
-## Prerequisites
+## Requirements
 
-- macOS (requires access to the macOS Calendar app)
-- [Bun](https://bun.sh/) runtime (v1.2.17 or later)
+- macOS (requires EventKit framework)
+- [Bun](https://bun.sh/) runtime
 - Xcode Command Line Tools (for Swift compilation)
 - Cloudflare R2 storage account
 
-## Setup
+## Installation
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/yourusername/ical-share.git
-   cd ical-share
-   ```
-
+1. Clone this repository
 2. Install dependencies:
-   ```bash
+   ```
    bun install
    ```
-
-3. Build the Swift calendar export tool:
-   ```bash
-   ./build.sh
+3. Configure environment variables (see Configuration section below)
+4. Build the project:
+   ```
+   bun run build
    ```
 
-4. Create a `.env` file based on the example:
-   ```bash
-   cp .env.example .env
-   ```
+> ⚠️ Important: All environment variables accessed via process.env are inlined and baked into the compiled binary during bun build.
+If you need to change secrets or configs, you must update .env and rebuild the binary.
+> This is not ideal but I'll update it in the future if I see a need for it.
 
-5. Configure your `.env` file with the following values:
-   ```
-   # Cloudflare R2 Configuration
-   R2_ACCOUNT_ID=your-r2-account-id
-   R2_ACCESS_KEY_ID=your-r2-access-key
-   R2_SECRET_ACCESS_KEY=your-r2-secret-key
-   R2_BUCKET_NAME=your-bucket-name
-   R2_PUBLIC_URL=https://your-public-url.example.com
-   
-   # Calendar Configuration
-   CALENDAR_PERMA_KEY=your-custom-calendar-identifier
-   ```
+## Configuration
 
-   The `CALENDAR_PERMA_KEY` is a custom identifier that will be used in the URL for your calendar (e.g., `your-custom-calendar-identifier.ics`).
+Copy the `.env.example` file to `.env` and fill in the required values:
 
-6. Grant calendar access permissions when prompted during the first run.
+```
+# Cloudflare R2 Configuration
+R2_ACCOUNT_ID=your-account-id
+R2_ACCESS_KEY_ID=your-access-key
+R2_SECRET_ACCESS_KEY=your-secret-key
+R2_BUCKET_NAME=your-bucket-name
+R2_PUBLIC_URL=https://your-public-url.com
+
+# Calendar Configuration
+CALENDAR_PERMA_KEY=your-custom-identifier
+```
 
 ## Usage
 
 ### One-time Export
 
-To export your calendar once and upload it:
+Run the script to export your calendar and upload it:
 
-```bash
+```
 bun start
 ```
 
 This will:
 1. Export events from your macOS Calendar for the current week
-2. Generate an ICS file (`shared.ics`)
+2. Convert them to an ICS file
 3. Upload the file to your R2 bucket
-4. Display the public URL for sharing
+4. Output the public URL for sharing
 
-### Scheduled Export
+### Scheduled Updates
 
-To run the export on a schedule, use the `run.sh` script with an interval parameter:
+To set up automatic calendar exports, use the included scheduler script:
 
-```bash
-./run.sh 1h  # Run every hour
+```
+bun run scripts/ical-scheduler.ts --interval 1h
 ```
 
-Supported interval formats:
-- `s` for seconds (e.g., `30s`)
-- `m` for minutes (e.g., `15m`)
-- `1h` for hours (e.g., `1h`)
-- `1d` for days (e.g., `1d`)
+Options:
+- `--interval <duration>`: How often to run the export (e.g., 30m, 1h, 1d, 1w)
+- `--label <name>`: Custom LaunchAgent label (default: com.ical-share)
+- `--binary <path>`: Path to the compiled binary
 
-The script will run immediately and then at the specified interval until stopped.
+After creating the LaunchAgent, load it with:
 
-## Testing
-
-To test the calendar export tool without uploading:
-
-```bash
-./build.sh test
+```
+launchctl load ~/Library/LaunchAgents/com.ical-share.plist
 ```
 
-Or using the TypeScript interface:
+## How It Works
 
-```bash
-bun run src/calendar-export.ts --test
-```
-
-## Troubleshooting
-
-### Calendar Access
-
-If you encounter permission issues:
-1. Go to System Preferences > Security & Privacy > Privacy > Calendars
-2. Ensure that Terminal (or your IDE) has permission to access your calendars
-
-### Build Issues
-
-If the Swift build fails:
-1. Make sure Xcode Command Line Tools are installed: `xcode-select --install`
-2. Try rebuilding with: `./build.sh rebuild`
-
-### Upload Issues
-
-If uploads fail:
-1. Verify your R2 credentials in the `.env` file
-2. Check that your bucket exists and has the correct permissions
-3. Ensure your R2 public URL is correctly configured
+1. The Swift component (`calendar-interop.swift`) uses EventKit to access your macOS Calendar events
+2. The TypeScript code exports these events to an ICS file using the `ics` library
+3. The file is uploaded to Cloudflare R2 using the AWS S3 SDK
+4. The public URL is generated based on your R2 configuration
 
 ## License
 
