@@ -12,7 +12,8 @@
     "url": "https://rodpa.dev"
   },
   "scripts": {
-    "start": "bun run src/main.ts"
+    "start": "bun run src/main.ts",
+    "build": "./scripts/compile.sh"
   },
   "devDependencies": {
     "@types/bun": "latest"
@@ -23,6 +24,8 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.842.0",
     "aws-sdk": "^2.1692.0",
+    "chalk": "^5.4.1",
+    "commander": "^14.0.0",
     "date-fns": "^4.1.0",
     "dotenv": "^17.0.1",
     "ics": "^3.8.1",

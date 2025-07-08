@@ -1,5 +1,5 @@
-import { exportCalendarToICS } from "./calendar-export";
-import { uploadICS } from "./upload";
+import { exportCalendarToICS } from "./calendar-export.js";
+import { uploadICS } from "./upload.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -13,8 +13,8 @@ const FILE_PATH = "./shared.ics";
 
 async function main() {
   try {
-    const path = exportCalendarToICS(FILE_PATH);
-    const url = await uploadICS(path, CALENDAR_PERMA_KEY!);
+    const path = await exportCalendarToICS(FILE_PATH);
+    const url = await uploadICS(path, CALENDAR_PERMA_KEY);
     console.log("✅ ICS file uploaded successfully!");
     console.log("🌐 Public URL:", url);
   } catch (err) {

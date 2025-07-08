@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "baseUrl": "./src",
+    "paths": {
+      "calendarInterop": ["calendar-interop.bin"]
+    }
+  },
+  "include": ["src"]
+}
